@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Mark4</string>
+    <string name="capture_button">Launch Camera</string>
+</resources>
