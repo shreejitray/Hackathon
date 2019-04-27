@@ -28,7 +28,9 @@ public class CustomList extends AppCompatActivity {
 
         CustomAdapter adapter = new CustomAdapter(dataList,getApplicationContext());
 
+        OnSwipeListner swipeListner = new OnSwipeListner();
         ListView listView = (ListView)findViewById(R.id.customList);
         listView.setAdapter(adapter);
+        listView.setOnTouchListener(swipeListner);
     }
 }
