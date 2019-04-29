@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.example.mark6.CustomList.CustomList;
+import com.example.mark6.RecyclerView.CustomRecyclerView;
 import com.example.mark6.SimpleListView.SimpleList;
 
 public class DynamicList extends AppCompatActivity {
@@ -23,6 +24,11 @@ public class DynamicList extends AppCompatActivity {
 
     public void customList(View view){
         Intent intent = new Intent(this, CustomList.class);
+        startActivity(intent);
+    }
+
+    public void recyclerView(View view){
+        Intent intent = new Intent(this, CustomRecyclerView.class);
         startActivity(intent);
     }
 }

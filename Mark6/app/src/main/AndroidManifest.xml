@@ -9,6 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".RecyclerView.CustomRecyclerView"></activity>
         <activity android:name=".CustomList.CustomList">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
