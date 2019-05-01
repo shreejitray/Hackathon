@@ -30,10 +30,11 @@ class list(Resource):
     def post(self):
         payload = json.loads(request.data)
         print(payload)
-        return {"payload":{
+        return {
             "id":"12345"
-        }},200
-    def get(self):
+        },200
+class fetchsaved(Resource):
+    def post(self):
         result = {
             "itemName": "Phone",
             "products": []
@@ -51,5 +52,6 @@ class list(Resource):
 
 api.add_resource(User,"/user/api/fetchpoduct")
 api.add_resource(list,"/user/api/list")
+api.add_resource(fetchsaved, "/user/api/saved")
 
 app.run(host='0.0.0.0',port=5000)

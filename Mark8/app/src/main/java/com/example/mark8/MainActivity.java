@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.constraint.Constraints;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -38,6 +39,7 @@ import com.example.mark8.Adapter.SavedListAdapter;
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
 import com.example.mark8.DTO.SearchResultDTO;
+import com.google.zxing.WriterException;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.theartofdev.edmodo.cropper.CropImage;
@@ -48,6 +50,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import androidmads.library.qrgenearator.QRGContents;
+import androidmads.library.qrgenearator.QRGEncoder;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -298,7 +303,7 @@ public class MainActivity extends AppCompatActivity
             }
         }else{
             IntentResult result = IntentIntegrator.parseActivityResult(requestCode,resultCode,data);
-            if(result!=null){
+            if(result==null){
                 Toast.makeText(this,"QR Result Not Found",Toast.LENGTH_LONG).show();
             }else{
                 String content = result.getContents();
@@ -334,6 +339,9 @@ public class MainActivity extends AppCompatActivity
         searchCardList.getAdapter().notifyDataSetChanged();
         TextView textView = findViewById(R.id.itemname);
         textView.setText(resultDTO.getItemName());
+        searchView.setVisibility(View.VISIBLE);
+        cartView.setVisibility(View.INVISIBLE);
+        savedView.setVisibility(View.INVISIBLE);
 
     }
 
@@ -341,7 +349,19 @@ public class MainActivity extends AppCompatActivity
         qrScan.initiateScan();
     }
 
+    public void fetchId(View view){
+        fetchProducts.generateQRCode(mainContext.getSavedList());
+    }
+
     public void generateQRCode(String id){
+        QRGEncoder qrgEncoder = new QRGEncoder(id, null, QRGContents.Type.TEXT, 10);
+        ImageView imageView = savedView.findViewById(R.id.qrimage);
+        try {
+            imageView.setImageBitmap(qrgEncoder.encodeAsBitmap());
+            imageView.setVisibility(View.VISIBLE);
+        } catch (WriterException e) {
+            Toast toast = Toast.makeText(this, "Unable to generateQR Code", Toast.LENGTH_SHORT);
+        }
 
     }
 

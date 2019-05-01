@@ -9,16 +9,44 @@
     tools:showIn="@layout/content_main"
     android:id="@+id/saved_view">
 
+    <ImageView
+        android:id="@+id/qrimage"
+        android:layout_width="110dp"
+        android:layout_height="100dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/saveList"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.47000003" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/saveList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="33dp"
+        android:layout_marginTop="200dp"
+        android:layout_marginBottom="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
     </android.support.v7.widget.RecyclerView>
+
+    <ImageButton
+        android:id="@+id/genqr"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginStart="178dp"
+        android:layout_marginTop="23dp"
+        android:layout_marginEnd="184dp"
+        android:layout_marginBottom="27dp"
+        android:onClick="fetchId"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/saveList"
+        app:srcCompat="@mipmap/genqr" />
 
 
 </android.support.constraint.ConstraintLayout>
