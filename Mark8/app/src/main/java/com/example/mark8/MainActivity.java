@@ -38,6 +38,8 @@ import com.example.mark8.Adapter.SavedListAdapter;
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
 import com.example.mark8.DTO.SearchResultDTO;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 import com.theartofdev.edmodo.cropper.CropImage;
 
 import java.io.File;
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity
     static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
     private Uri picUri;
     private FetchProducts fetchProducts;
+    private IntentIntegrator qrScan;
 
 
 
@@ -113,6 +116,8 @@ public class MainActivity extends AppCompatActivity
     public void setupApplication(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        qrScan = new IntentIntegrator(this);
 
         savedView = findViewById(R.id.saved_view);
         searchView = findViewById(R.id.search_view);
@@ -291,7 +296,23 @@ public class MainActivity extends AppCompatActivity
                     System.out.println("File not found");
                 }
             }
+        }else{
+            IntentResult result = IntentIntegrator.parseActivityResult(requestCode,resultCode,data);
+            if(result!=null){
+                Toast.makeText(this,"QR Result Not Found",Toast.LENGTH_LONG).show();
+            }else{
+                String content = result.getContents();
+                fetchProducts.fetchSavedList(content);
+            }
         }
+    }
+
+    public void savedListSetup(SearchResultDTO resultDTO){
+        mainContext.setSavedList(resultDTO.getProducts());
+        savedList.getAdapter().notifyDataSetChanged();
+        savedView.setVisibility(View.VISIBLE);
+        searchView.setVisibility(View.INVISIBLE);
+        cartView.setVisibility(View.INVISIBLE);
     }
 
     public void performCrop(){
@@ -313,6 +334,14 @@ public class MainActivity extends AppCompatActivity
         searchCardList.getAdapter().notifyDataSetChanged();
         TextView textView = findViewById(R.id.itemname);
         textView.setText(resultDTO.getItemName());
+
+    }
+
+    public void qrScanner(View view){
+        qrScan.initiateScan();
+    }
+
+    public void generateQRCode(String id){
 
     }
 

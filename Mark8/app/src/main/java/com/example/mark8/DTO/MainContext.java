@@ -36,6 +36,9 @@ public class MainContext {
         }
     }
 
+    public void setSavedList(List<Product> savedList){
+        this.savedList = savedList;
+    }
 
     public List<Product> getSavedList() {
         return savedList;

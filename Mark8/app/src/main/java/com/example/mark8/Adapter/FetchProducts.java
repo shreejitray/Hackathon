@@ -3,9 +3,14 @@ package com.example.mark8.Adapter;
 import android.graphics.Bitmap;
 import android.widget.Toast;
 
+import com.example.mark8.DTO.GenerateQRCodeDTO;
+import com.example.mark8.DTO.Product;
+import com.example.mark8.DTO.SavedListRequestDTO;
 import com.example.mark8.DTO.SearchRequestDTO;
 import com.example.mark8.DTO.SearchResultDTO;
 import com.example.mark8.MainActivity;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -13,7 +18,6 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
-import retrofit2.http.Field;
 import retrofit2.http.POST;
 
 public class FetchProducts {
@@ -56,6 +60,40 @@ public class FetchProducts {
         });
     }
 
+    public void fetchSavedList(String id){
+        SavedListRequestDTO savedListRequestDTO = new SavedListRequestDTO();
+        savedListRequestDTO.setPayload(id);
+        getRetrofitInstance().create(GetProducts.class).getSavedList(savedListRequestDTO).enqueue(new Callback<SearchResultDTO>() {
+            @Override
+            public void onResponse(Call<SearchResultDTO> call, Response<SearchResultDTO> response) {
+                SearchResultDTO resultDTO = response.body();
+                mainActivity.savedListSetup(resultDTO);
+            }
+
+            @Override
+            public void onFailure(Call<SearchResultDTO> call, Throwable t) {
+                Toast.makeText(mainActivity, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void generateQRCode(List<Product> products){
+        GenerateQRCodeDTO generateQRCodeDTO = new GenerateQRCodeDTO();
+        generateQRCodeDTO.setPayload(products);
+        getRetrofitInstance().create(GetProducts.class).getQRCode(generateQRCodeDTO).enqueue(new Callback<SearchResultDTO>() {
+            @Override
+            public void onResponse(Call<SearchResultDTO> call, Response<SearchResultDTO> response) {
+                SearchResultDTO resultDTO = response.body();
+                mainActivity.generateQRCode(resultDTO.getId());
+            }
+
+            @Override
+            public void onFailure(Call<SearchResultDTO> call, Throwable t) {
+                Toast.makeText(mainActivity, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     public static int[][][] getArrayFromImage(Bitmap image){
         int row = image.getHeight();
         int col = image.getWidth();
@@ -77,5 +115,11 @@ public class FetchProducts {
     public interface GetProducts {
         @POST("fetchpoduct")
         Call<SearchResultDTO> getProducts(@Body SearchRequestDTO payload);
+
+        @POST("saved")
+        Call<SearchResultDTO> getSavedList(@Body SavedListRequestDTO payload);
+
+        @POST("list")
+        Call<SearchResultDTO> getQRCode(@Body GenerateQRCodeDTO payload);
     }
 }
