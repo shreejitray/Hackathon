@@ -27,14 +27,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mark8.Adapter.CardCustomAdapter;
 import com.example.mark8.Adapter.CardSwipeListener;
 import com.example.mark8.Adapter.CartCardAdapter;
+import com.example.mark8.Adapter.FetchProducts;
 import com.example.mark8.Adapter.SavedListAdapter;
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
+import com.example.mark8.DTO.SearchResultDTO;
 import com.theartofdev.edmodo.cropper.CropImage;
 
 import java.io.File;
@@ -47,13 +50,17 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-  MainContext mainContext;
+    private MainContext mainContext;
     RecyclerView searchCardList;
     RecyclerView cartCardList;
     RecyclerView savedList;
+    View searchView;
+    View cartView;
+    View savedView;
     static final int CAPTURE_IMAGE=1;
     static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
     private Uri picUri;
+    private FetchProducts fetchProducts;
 
 
 
@@ -107,6 +114,11 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        savedView = findViewById(R.id.saved_view);
+        searchView = findViewById(R.id.search_view);
+        cartView = findViewById(R.id.cart_view);
+
+        fetchProducts = new FetchProducts(this);
         // main context
         mainContext = new MainContext();
         CardCustomAdapter cardCustomAdapter = new CardCustomAdapter(mainContext);
@@ -122,11 +134,11 @@ public class MainActivity extends AppCompatActivity
 
         searchCardList.setAdapter(cardCustomAdapter);
         searchCardList.setOnTouchListener(cardSwipeListener);
+        searchView.setVisibility(View.VISIBLE);
 
 
         CartCardAdapter cartCardAdapter = new CartCardAdapter(mainContext);
         cartCardList = findViewById(R.id.cartList);
-        cartCardList.setVisibility(View.INVISIBLE);
 
         RecyclerView.LayoutManager layoutManager2 = new LinearLayoutManager(this);
         cartCardList.setLayoutManager(layoutManager2);
@@ -134,10 +146,11 @@ public class MainActivity extends AppCompatActivity
         cartCardList.addItemDecoration(new DividerItemDecoration(this,LinearLayoutManager.VERTICAL));
 
         cartCardList.setAdapter(cartCardAdapter);
+        cartView.setVisibility(View.INVISIBLE);
 
         SavedListAdapter savedListAdapter = new SavedListAdapter(mainContext);
         savedList = findViewById(R.id.saveList);
-        savedList.setVisibility(View.INVISIBLE);
+        savedView.setVisibility(View.INVISIBLE);
 
         RecyclerView.LayoutManager layoutManager3 = new LinearLayoutManager(this);
         savedList.setLayoutManager(layoutManager3);
@@ -145,6 +158,7 @@ public class MainActivity extends AppCompatActivity
         savedList.addItemDecoration(new DividerItemDecoration(this,LinearLayoutManager.VERTICAL));
 
         savedList.setAdapter(savedListAdapter);
+
 
 
 
@@ -184,28 +198,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -215,23 +207,23 @@ public class MainActivity extends AppCompatActivity
         switch(id){
             case R.id.open_cart:{
                 cartCardList.getAdapter().notifyDataSetChanged();
-                savedList.setVisibility(View.INVISIBLE);
-                searchCardList.setVisibility(View.INVISIBLE);
-                cartCardList.setVisibility(View.VISIBLE);
+                cartView.setVisibility(View.VISIBLE);
+                searchView.setVisibility(View.INVISIBLE);
+                savedView.setVisibility(View.INVISIBLE);
                 break;
             }
             case R.id.open_list:{
 
-                cartCardList.setVisibility(View.INVISIBLE);
                 savedList.getAdapter().notifyDataSetChanged();
-                searchCardList.setVisibility(View.INVISIBLE);
-                savedList.setVisibility(View.VISIBLE);
+                cartView.setVisibility(View.INVISIBLE);
+                searchView.setVisibility(View.INVISIBLE);
+                savedView.setVisibility(View.VISIBLE);
                 break;
             }
             case R.id.open_main:{
-                savedList.setVisibility(View.INVISIBLE);
-                searchCardList.setVisibility(View.VISIBLE);
-                cartCardList.setVisibility(View.INVISIBLE);
+                cartView.setVisibility(View.INVISIBLE);
+                searchView.setVisibility(View.VISIBLE);
+                savedView.setVisibility(View.INVISIBLE);
                 break;
             }
         }
@@ -269,7 +261,7 @@ public class MainActivity extends AppCompatActivity
                 final String dir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)+ "/";
                 File newdir = new File(dir);
                 newdir.mkdirs();
-                String file = dir+ DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+".jpg";
+                String file = dir+ DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+".png";
 
 
                 File newfile = new File(file);
@@ -277,7 +269,7 @@ public class MainActivity extends AppCompatActivity
                     newfile.createNewFile();
                     FileOutputStream outputStream = new FileOutputStream(newfile);
                     Bitmap image = (Bitmap) data.getExtras().get("data");
-                    image.compress(Bitmap.CompressFormat.PNG, 85, outputStream);
+                    image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
                     outputStream.flush();
                     outputStream.close();
                     picUri = Uri.fromFile(newfile);
@@ -292,8 +284,9 @@ public class MainActivity extends AppCompatActivity
             if(resultCode == RESULT_OK){
                 try {
                     Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), result.getUri());
-                    populateData();
-                    searchCardList.getAdapter().notifyDataSetChanged();
+                    ImageView imageView = findViewById(R.id.clickedimage);
+                    imageView.setImageURI(result.getUri());
+                    fetchProducts.fetchProducts(bitmap);
                 } catch (IOException e) {
                     System.out.println("File not found");
                 }
@@ -313,6 +306,14 @@ public class MainActivity extends AppCompatActivity
             Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
             toast.show();
         }
+    }
+
+    public void setUpContext(SearchResultDTO resultDTO){
+        mainContext.setSearchList(resultDTO.getProducts());
+        searchCardList.getAdapter().notifyDataSetChanged();
+        TextView textView = findViewById(R.id.itemname);
+        textView.setText(resultDTO.getItemName());
+
     }
 
 }

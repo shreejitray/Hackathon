@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
     static final int CAPTURE_IMAGE=1;
     static final int PIC_CROP = 2;
+    static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
     private Uri picUri;
 
     @Override
