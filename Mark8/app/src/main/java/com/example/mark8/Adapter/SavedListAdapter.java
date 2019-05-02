@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
 import com.example.mark8.R;
+import com.squareup.picasso.Picasso;
 
 public class SavedListAdapter extends RecyclerView.Adapter {
 
@@ -35,7 +36,7 @@ public class SavedListAdapter extends RecyclerView.Adapter {
         Product data=mainContext.getSavedList().get(i);
         customViewHolder.price.setText(data.getPrice());
         customViewHolder.name.setText(data.getName());
-        customViewHolder.image.setImageURI(Uri.parse(data.getImageUrl()));
+        Picasso.get().load(data.getImageUrl()).into(customViewHolder.image);
         customViewHolder.count.setText(String.valueOf(data.getCount()));
         customViewHolder.id = data.getId();
         customViewHolder.product = data;

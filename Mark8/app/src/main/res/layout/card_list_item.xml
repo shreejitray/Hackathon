@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="150dp"
             android:text="TextView"
-            android:textSize="30sp"
+            android:textSize="15dp"
             android:typeface="serif" />
         <TextView
             android:id="@+id/currency"

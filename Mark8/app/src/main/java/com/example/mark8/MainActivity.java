@@ -28,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mark8.Adapter.CaptureActivityPotrait;
 import com.example.mark8.Adapter.CardCustomAdapter;
 import com.example.mark8.Adapter.CartViewListener;
 import com.example.mark8.Adapter.SavedViewListener;
@@ -40,6 +41,7 @@ import com.example.mark8.DTO.SearchResultDTO;
 import com.google.zxing.WriterException;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+import com.journeyapps.barcodescanner.CaptureActivity;
 import com.theartofdev.edmodo.cropper.CropImage;
 
 import java.io.File;
@@ -117,6 +119,10 @@ public class MainActivity extends AppCompatActivity
 
         //qr scan
         qrScan = new IntentIntegrator(this);
+        qrScan.setPrompt("Scan qr code");
+        qrScan.setOrientationLocked(true);
+        qrScan.setBeepEnabled(true);
+        qrScan.setCaptureActivity(CaptureActivityPotrait.class);
 
         //initiating view
         setSavedView(findViewById(R.id.saved_view));

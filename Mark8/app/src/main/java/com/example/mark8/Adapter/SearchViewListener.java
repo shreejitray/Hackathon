@@ -27,10 +27,19 @@ public class SearchViewListener implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        RecyclerView list = (RecyclerView) v;
+        View view = list.findChildViewUnder(event.getX(),event.getY());
+        if(view==null){
+            return true;
+        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 action_down_x = (int) event.getX();
                 isSwipe=false;  //until now
+                view.animate()
+                        .translationY(-100)
+                        .setDuration(200)
+                        .setListener(null);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(!isSwipe)
@@ -39,13 +48,14 @@ public class SearchViewListener implements View.OnTouchListener {
                     difference = action_down_x - action_up_x;
                     if(Math.abs(difference)>50)
                     {
-                        RecyclerView list = (RecyclerView) v;
-                        View view = list.findChildViewUnder(event.getX(),event.getY());
                         CardCustomAdapter.CustomHolder customHolder = (CardCustomAdapter.CustomHolder) list.findContainingViewHolder(view);
                         Product product = customHolder.product;
                         //swipe left or right
                         if(difference>50){
                             //add to save list
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                             mainContext.addtoSavedList(product);
                             context.getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" saved to list", Toast.LENGTH_SHORT);
@@ -53,6 +63,9 @@ public class SearchViewListener implements View.OnTouchListener {
                             toast.show();
                         }
                         else if(difference < -50){
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                             //add to cartt
                             mainContext.addToCart(product);
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" added to cart", Toast.LENGTH_SHORT);
@@ -64,6 +77,11 @@ public class SearchViewListener implements View.OnTouchListener {
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                view.animate()
+                        .translationY(0)
+                        .translationX(0)
+                        .setDuration(200)
+                        .setListener(null);
                 action_down_x = 0;
                 action_up_x = 0;
                 difference = 0;

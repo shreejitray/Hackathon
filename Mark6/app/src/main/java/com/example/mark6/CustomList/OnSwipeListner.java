@@ -17,10 +17,18 @@ public class OnSwipeListner implements View.OnTouchListener {
     int difference;
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        RecyclerView list = (RecyclerView) v;
+        View view = list.findChildViewUnder(event.getX(),event.getY());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 action_down_x = (int) event.getX();
                 isSwipe=false;  //until now
+                if(view!=null) {
+                    view.animate()
+                            .translationY(-100)
+                            .setDuration(200)
+                            .setListener(null);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(!isSwipe)
@@ -29,19 +37,24 @@ public class OnSwipeListner implements View.OnTouchListener {
                     difference = action_down_x - action_up_x;
                     if(Math.abs(difference)>50)
                     {
-                        RecyclerView list = (RecyclerView) v;
-                        View view = list.findChildViewUnder(event.getX(),event.getY());
                         RecyclerViewAdapter.CustomViewHolder customViewHolder = (RecyclerViewAdapter.CustomViewHolder) list.findContainingViewHolder(view);
+
                         //View view = list.getChildAt(list.pointToPosition((int)event.getX(),(int)event.getY()));
                         TextView textView = view.findViewById(R.id.primarytext);
                         System.out.println("Name is "+textView.getText());
                         //swipe left or right
                         if(difference>0){
                             //swipe left
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
 
                         }
                         else{
                             //swipe right
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                         }
                         isSwipe=true;
                     }
@@ -51,6 +64,11 @@ public class OnSwipeListner implements View.OnTouchListener {
                 action_down_x = 0;
                 action_up_x = 0;
                 difference = 0;
+                view.animate()
+                        .translationY(0)
+                        .translationX(0)
+                        .setDuration(200)
+                        .setListener(null);
                 break;
         }
         return false;

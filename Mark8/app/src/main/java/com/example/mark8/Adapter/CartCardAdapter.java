@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
 import com.example.mark8.R;
+import com.squareup.picasso.Picasso;
 
 public class CartCardAdapter extends RecyclerView.Adapter {
 
@@ -37,7 +38,7 @@ public class CartCardAdapter extends RecyclerView.Adapter {
         Product data=mainContext.getCartList().get(i);
         customViewHolder.price.setText(data.getPrice());
         customViewHolder.name.setText(data.getName());
-        customViewHolder.image.setImageURI(Uri.parse(data.getImageUrl()));
+        Picasso.get().load(data.getImageUrl()).into(customViewHolder.image);
         customViewHolder.count.setText(String.valueOf(data.getCount()));
         customViewHolder.id = data.getId();
         customViewHolder.product = data;
