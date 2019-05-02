@@ -22,7 +22,7 @@ import retrofit2.http.POST;
 
 public class FetchProducts {
     private static Retrofit retrofit;
-    private static String url = "http://192.168.43.144:5000/user/api/";
+    public static String url = "http://192.168.1.12:5000/";
     private MainActivity mainActivity;
 
     public FetchProducts(MainActivity mainActivity){
@@ -30,17 +30,15 @@ public class FetchProducts {
     }
 
     public static Retrofit getRetrofitInstance() {
-        if (retrofit == null) {
             retrofit = new retrofit2.Retrofit.Builder()
                     .baseUrl(url)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
-        }
         return retrofit;
     }
 
     public void fetchProducts(Bitmap image){
-        int [][][]array = getArrayFromImage(image);
+        byte [][][]array = getArrayFromImage(image);
         SearchRequestDTO requestDTO = new SearchRequestDTO();
         requestDTO.setPayload(array);
         Retrofit client = getRetrofitInstance();
@@ -49,7 +47,11 @@ public class FetchProducts {
             @Override
             public void onResponse(Call<SearchResultDTO> call, Response<SearchResultDTO> response) {
                 SearchResultDTO resultDTO = response.body();
-                mainActivity.setUpContext(resultDTO);
+                if(resultDTO!=null) {
+                    mainActivity.setUpContext(resultDTO);
+                }else{
+                    mainActivity.getProgressDialog().dismiss();
+                }
 
             }
 
@@ -68,7 +70,11 @@ public class FetchProducts {
             @Override
             public void onResponse(Call<SearchResultDTO> call, Response<SearchResultDTO> response) {
                 SearchResultDTO resultDTO = response.body();
-                mainActivity.savedListSetup(resultDTO);
+                if(resultDTO!=null) {
+                    mainActivity.savedListSetup(resultDTO);
+                }else{
+                    mainActivity.getProgressDialog().dismiss();
+                }
             }
 
             @Override
@@ -86,7 +92,9 @@ public class FetchProducts {
             @Override
             public void onResponse(Call<SearchResultDTO> call, Response<SearchResultDTO> response) {
                 SearchResultDTO resultDTO = response.body();
-                mainActivity.generateQRCode(resultDTO.getId());
+                if(resultDTO!=null) {
+                    mainActivity.generateQRCode(resultDTO.getId());
+                }
             }
 
             @Override
@@ -97,32 +105,32 @@ public class FetchProducts {
         });
     }
 
-    public static int[][][] getArrayFromImage(Bitmap image){
+    public static byte[][][] getArrayFromImage(Bitmap image){
         int row = image.getHeight();
         int col = image.getWidth();
-        int[][][] array = new int[row][col][3];
+        byte[][][] array = new byte[row][col][3];
         for(int i=0;i<row;i++){
             for(int j=0;j<col;j++){
                 int pixel = image.getPixel(j, i);
                 int red = ((pixel & 0x00FF0000) >> 16);
                 int green = ((pixel & 0x0000FF00) >> 8);
                 int blue = pixel & 0x000000FF;
-                array[i][j][0] = red;
-                array[i][j][1] = green;
-                array[i][j][2] = blue;
+                array[i][j][0] = (byte)red;
+                array[i][j][1] = (byte)green;
+                array[i][j][2] = (byte)blue;
             }
         }
         return array;
     }
 
     public interface GetProducts {
-        @POST("fetchpoduct")
+        @POST("imageSearch")
         Call<SearchResultDTO> getProducts(@Body SearchRequestDTO payload);
 
-        @POST("saved")
+        @POST("getBarcode")
         Call<SearchResultDTO> getSavedList(@Body SavedListRequestDTO payload);
 
-        @POST("list")
+        @POST("addBarcode")
         Call<SearchResultDTO> getQRCode(@Body GenerateQRCodeDTO payload);
     }
 }

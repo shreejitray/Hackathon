@@ -26,6 +26,11 @@ public class CartViewListener implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        RecyclerView list = (RecyclerView) v;
+        View view = list.findChildViewUnder(event.getX(),event.getY());
+        if(view==null){
+            return true;
+        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 action_down_x = (int) event.getX();
@@ -38,17 +43,20 @@ public class CartViewListener implements View.OnTouchListener {
                     difference = action_down_x - action_up_x;
                     if(Math.abs(difference)>50)
                     {
-                        RecyclerView list = (RecyclerView) v;
-                        View view = list.findChildViewUnder(event.getX(),event.getY());
                         CartCardAdapter.CustomHolder customHolder = (CartCardAdapter.CustomHolder) list.findContainingViewHolder(view);
                         Product product = customHolder.product;
                         //swipe left or right
                         if(difference>50){
                             //add to save list
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                             mainContext.addtoSavedList(product);
                             mainContext.removeFromCartList(product);
+                            context.getSavedView().findViewById(R.id.genqr).setVisibility(View.VISIBLE);
                             context.getCartCardList().getAdapter().notifyDataSetChanged();
                             context.getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+                            context.getSavedView().findViewById(R.id.shareqr).setVisibility(View.INVISIBLE);
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" saved to list", Toast.LENGTH_SHORT);
                             toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
                             toast.show();
@@ -58,6 +66,11 @@ public class CartViewListener implements View.OnTouchListener {
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                view.animate()
+                        .translationY(0)
+                        .translationX(0)
+                        .setDuration(200)
+                        .setListener(null);
                 action_down_x = 0;
                 action_up_x = 0;
                 difference = 0;

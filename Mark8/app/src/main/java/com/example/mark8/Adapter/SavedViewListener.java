@@ -27,6 +27,11 @@ public class SavedViewListener implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        RecyclerView list = (RecyclerView) v;
+        View view = list.findChildViewUnder(event.getX(),event.getY());
+        if(view == null){
+            return  true;
+        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 action_down_x = (int) event.getX();
@@ -39,15 +44,20 @@ public class SavedViewListener implements View.OnTouchListener {
                     difference = action_down_x - action_up_x;
                     if(Math.abs(difference)>50)
                     {
-                        RecyclerView list = (RecyclerView) v;
-                        View view = list.findChildViewUnder(event.getX(),event.getY());
                         SavedListAdapter.CustomHolder customHolder = (SavedListAdapter.CustomHolder) list.findContainingViewHolder(view);
                         Product product = customHolder.product;
                         //swipe left or right
                         if(difference>50){
-                            //add to save list
+                            //delete from save list
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                             mainContext.removeFromSavedList(product);
+                            if(mainContext.getSavedList().size()==0){
+                                context.getSavedView().findViewById(R.id.genqr).setVisibility(View.INVISIBLE);
+                            }
                             context.getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+                            context.getSavedView().findViewById(R.id.shareqr).setVisibility(View.INVISIBLE);
                             context.getSavedList().getAdapter().notifyDataSetChanged();
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" removed from list", Toast.LENGTH_SHORT);
                             toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
@@ -55,6 +65,9 @@ public class SavedViewListener implements View.OnTouchListener {
                         }
                         else if(difference < -50){
                             //add to cart
+                            view.animate()
+                                    .translationXBy(-1*difference)
+                                    .setDuration(200);
                             mainContext.addToCart(product);
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" added to cart", Toast.LENGTH_SHORT);
                             toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
@@ -65,6 +78,11 @@ public class SavedViewListener implements View.OnTouchListener {
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                view.animate()
+                        .translationY(0)
+                        .translationX(0)
+                        .setDuration(200)
+                        .setListener(null);
                 action_down_x = 0;
                 action_up_x = 0;
                 difference = 0;

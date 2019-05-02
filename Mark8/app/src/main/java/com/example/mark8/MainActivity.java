@@ -11,10 +11,12 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
+import android.view.Menu;
 import android.view.View;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -65,10 +67,11 @@ public class MainActivity extends AppCompatActivity
     private View savedView;
     static final int CAPTURE_IMAGE=1;
     static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
-    private Uri picUri;
+    private Uri picUri,qrUri;
     private FetchProducts fetchProducts;
     private IntentIntegrator qrScan;
     private ProgressDialog progressDialog;
+    private View instructionView;
 
 
     @Override
@@ -128,6 +131,7 @@ public class MainActivity extends AppCompatActivity
         setSavedView(findViewById(R.id.saved_view));
         searchView = findViewById(R.id.search_view);
         setCartView(findViewById(R.id.cart_view));
+        instructionView = findViewById(R.id.instructions);
         fetchProducts = new FetchProducts(this);
         mainContext = new MainContext();
         setProgressDialog(new ProgressDialog(this));
@@ -145,7 +149,8 @@ public class MainActivity extends AppCompatActivity
 
         searchCardList.setAdapter(cardCustomAdapter);
         searchCardList.setOnTouchListener(searchViewListener);
-        searchView.setVisibility(View.VISIBLE);
+        searchView.setVisibility(View.INVISIBLE);
+        instructionView.setVisibility(View.VISIBLE);
 
         // Initiating Cart recycler view
         CartCardAdapter cartCardAdapter = new CartCardAdapter(mainContext);
@@ -175,6 +180,8 @@ public class MainActivity extends AppCompatActivity
         savedList.setAdapter(savedListAdapter);
         savedList.setOnTouchListener(savedViewListener);
         getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+        getSavedView().findViewById(R.id.shareqr).setVisibility(View.INVISIBLE);
+        getSavedView().findViewById(R.id.genqr).setVisibility(View.INVISIBLE);
 
         // navigation pane
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -204,28 +211,52 @@ public class MainActivity extends AppCompatActivity
 
         switch(id){
             case R.id.open_cart:{
-                cartCardList.getAdapter().notifyDataSetChanged();
-                getCartView().setVisibility(View.VISIBLE);
-                searchView.setVisibility(View.INVISIBLE);
-                getSavedView().setVisibility(View.INVISIBLE);
-                cartCardList.scheduleLayoutAnimation();
+                if(mainContext.getCartList().size()==0){
+                    searchView.setVisibility(View.INVISIBLE);
+                    cartView.setVisibility(View.INVISIBLE);
+                    savedView.setVisibility(View.INVISIBLE);
+                    instructionView.setVisibility(View.VISIBLE);
+                }else {
+                    instructionView.setVisibility(View.INVISIBLE);
+                    cartCardList.getAdapter().notifyDataSetChanged();
+                    getCartView().setVisibility(View.VISIBLE);
+                    searchView.setVisibility(View.INVISIBLE);
+                    getSavedView().setVisibility(View.INVISIBLE);
+                    cartCardList.scheduleLayoutAnimation();
+                }
                 break;
             }
             case R.id.open_list:{
 
-                savedList.getAdapter().notifyDataSetChanged();
-                getCartView().setVisibility(View.INVISIBLE);
-                searchView.setVisibility(View.INVISIBLE);
-                getSavedView().setVisibility(View.VISIBLE);
-                savedList.scheduleLayoutAnimation();
+                if(mainContext.getSavedList().size()==0){
+                    searchView.setVisibility(View.INVISIBLE);
+                    cartView.setVisibility(View.INVISIBLE);
+                    savedView.setVisibility(View.INVISIBLE);
+                    instructionView.setVisibility(View.VISIBLE);
+                }else {
+                    instructionView.setVisibility(View.INVISIBLE);
+                    savedList.getAdapter().notifyDataSetChanged();
+                    getCartView().setVisibility(View.INVISIBLE);
+                    searchView.setVisibility(View.INVISIBLE);
+                    getSavedView().setVisibility(View.VISIBLE);
+                    savedList.scheduleLayoutAnimation();
+                }
                 break;
 
             }
             case R.id.open_main:{
-                getCartView().setVisibility(View.INVISIBLE);
-                searchView.setVisibility(View.VISIBLE);
-                getSavedView().setVisibility(View.INVISIBLE);
-                searchCardList.scheduleLayoutAnimation();
+                if(mainContext.getSearchList().size()==0){
+                    searchView.setVisibility(View.INVISIBLE);
+                    cartView.setVisibility(View.INVISIBLE);
+                    savedView.setVisibility(View.INVISIBLE);
+                    instructionView.setVisibility(View.VISIBLE);
+                }else {
+                    instructionView.setVisibility(View.INVISIBLE);
+                    getCartView().setVisibility(View.INVISIBLE);
+                    searchView.setVisibility(View.VISIBLE);
+                    getSavedView().setVisibility(View.INVISIBLE);
+                    searchCardList.scheduleLayoutAnimation();
+                }
                 break;
             }
         }
@@ -239,6 +270,12 @@ public class MainActivity extends AppCompatActivity
         try {
             Intent capture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if(capture.resolveActivity(getPackageManager())!= null) {
+                File file = getImageFile();
+                picUri = FileProvider.getUriForFile(
+                        this,
+                        this.getApplicationContext()
+                                .getPackageName() + ".provider", file);
+                capture.putExtra(MediaStore.EXTRA_OUTPUT, picUri);
                 startActivityForResult(capture, CAPTURE_IMAGE);
             }else{
                 String errorMessage = "Whoops - your device doesn't support capturing images!";
@@ -253,26 +290,52 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public File getImageFile(){
+        try {
+            final String dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/";
+            File newdir = new File(dir);
+            newdir.mkdirs();
+            String file = dir + DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString() + ".png";
+            File newfile = new File(file);
+            newfile.createNewFile();
+            return newfile;
+        }catch(Exception e){
+            Toast.makeText(this,"Unable to create image file, please try again",Toast.LENGTH_LONG).show();
+        }
+        return null;
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
         if(requestCode == CAPTURE_IMAGE){
             if(resultCode == RESULT_OK) {
-                final String dir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)+ "/";
-                File newdir = new File(dir);
-                newdir.mkdirs();
-                String file = dir+ DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+".png";
-                File newfile = new File(file);
-                try {
-                    newfile.createNewFile();
-                    FileOutputStream outputStream = new FileOutputStream(newfile);
-                    Bitmap image = (Bitmap) data.getExtras().get("data");
-                    image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-                    outputStream.flush();
-                    outputStream.close();
-                    picUri = Uri.fromFile(newfile);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                final String dir =  getExternalFilesDir(Environment.DIRECTORY_PICTURES)+ "/";
+//                File newdir = new File(dir);
+//                newdir.mkdirs();
+//                String file = dir+ DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+".png";
+//                File newfile = new File(file);
+//                int height,width;
+//                try {
+//                    newfile.createNewFile();
+//                    FileOutputStream outputStream = new FileOutputStream(newfile);
+//                    Bitmap image = (Bitmap) data.getExtras().get("data");
+//                    ImageView imageView = findViewById(R.id.clickedimage);
+//                    imageView.setImageBitmap(image);
+//                    height = image.getHeight();
+//                    width = image.getWidth();
+//                    image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+//                    outputStream.flush();
+//                    outputStream.close();
+//                    //picUri = Uri.fromFile(newfile);
+//                    picUri = FileProvider.getUriForFile(
+//                            this,
+//                            this.getApplicationContext()
+//                                    .getPackageName() + ".provider", newfile);
+//                    //performCrop(height,width);
+//                    fetchProducts.fetchProducts(image);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
                 performCrop();
             }
 
@@ -280,19 +343,16 @@ public class MainActivity extends AppCompatActivity
             CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if(resultCode == RESULT_OK){
                 try {
-                    getCartView().setVisibility(View.INVISIBLE);
-                    getSavedView().setVisibility(View.INVISIBLE);
-                    searchView.setVisibility(View.VISIBLE);
+                    getProgressDialog().setMessage("Processing image, fetching products");
+                    getProgressDialog().show();
                     mainContext.setSearchList(new ArrayList());
                     searchCardList.getAdapter().notifyDataSetChanged();
 
-                    getProgressDialog().setMessage("Processing image, fetching products");
-                    getProgressDialog().show();
+                    Bitmap bitmap = Bitmap.createScaledBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), result.getUri()),512,512,false);
 
-                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), result.getUri());
                     ImageView imageView = findViewById(R.id.clickedimage);
-                    imageView.setImageURI(result.getUri());
-                    fetchProducts.fetchProducts(bitmap);
+                    imageView.setImageBitmap(bitmap);
+                   fetchProducts.fetchProducts(bitmap);
                 } catch (IOException e) {
                     getProgressDialog().dismiss();
                     Toast.makeText(this,"Unable to process image, please try again",Toast.LENGTH_LONG).show();
@@ -322,13 +382,18 @@ public class MainActivity extends AppCompatActivity
 
     public void savedListSetup(SearchResultDTO resultDTO){
         getProgressDialog().dismiss();
-        mainContext.setSavedList(resultDTO.getProducts());
-        savedList.getAdapter().notifyDataSetChanged();
-        getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
-        getSavedView().setVisibility(View.VISIBLE);
-        searchView.setVisibility(View.INVISIBLE);
-        getCartView().setVisibility(View.INVISIBLE);
-        savedList.scheduleLayoutAnimation();
+        if(resultDTO.getProducts() !=null && resultDTO.getProducts().size()>0) {
+            mainContext.setSavedList(resultDTO.getProducts());
+            savedList.getAdapter().notifyDataSetChanged();
+            getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+            getSavedView().findViewById(R.id.shareqr).setVisibility(View.INVISIBLE);
+            savedView.findViewById(R.id.genqr).setVisibility(View.VISIBLE);
+            getSavedView().setVisibility(View.VISIBLE);
+            searchView.setVisibility(View.INVISIBLE);
+            getCartView().setVisibility(View.INVISIBLE);
+            instructionView.setVisibility(View.INVISIBLE);
+            savedList.scheduleLayoutAnimation();
+        }
     }
 
     public void performCrop(){
@@ -347,14 +412,17 @@ public class MainActivity extends AppCompatActivity
 
     public void setUpContext(SearchResultDTO resultDTO){
         getProgressDialog().dismiss();
-        mainContext.setSearchList(resultDTO.getProducts());
-        searchCardList.getAdapter().notifyDataSetChanged();
-        TextView textView = findViewById(R.id.itemname);
-        textView.setText(resultDTO.getItemName());
-        searchView.setVisibility(View.VISIBLE);
-        getCartView().setVisibility(View.INVISIBLE);
-        getSavedView().setVisibility(View.INVISIBLE);
-        searchCardList.scheduleLayoutAnimation();
+        if(resultDTO.getProducts() != null) {
+            mainContext.setSearchList(resultDTO.getProducts());
+            searchCardList.getAdapter().notifyDataSetChanged();
+            TextView textView = findViewById(R.id.itemname);
+            textView.setText(resultDTO.getItemName());
+            searchView.setVisibility(View.VISIBLE);
+            getCartView().setVisibility(View.INVISIBLE);
+            getSavedView().setVisibility(View.INVISIBLE);
+            instructionView.setVisibility(View.INVISIBLE);
+            searchCardList.scheduleLayoutAnimation();
+        }
 
     }
 
@@ -374,13 +442,31 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void generateQRCode(String id){
-        QRGEncoder qrgEncoder = new QRGEncoder(id, null, QRGContents.Type.TEXT, 10);
+        QRGEncoder qrgEncoder = new QRGEncoder(id, null, QRGContents.Type.TEXT, 1000);
         ImageView imageView = getSavedView().findViewById(R.id.qrimage);
         try {
             imageView.setImageBitmap(qrgEncoder.encodeAsBitmap());
+
             imageView.setVisibility(View.VISIBLE);
+            getSavedView().findViewById(R.id.shareqr).setVisibility(View.VISIBLE);
             getProgressDialog().dismiss();
-        } catch (WriterException e) {
+            final String dir =  Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)+ "/";
+            File newdir = new File(dir);
+            newdir.mkdirs();
+            String file = dir+ "generated-qr.png";
+            File newfile = new File(file);
+            newfile.createNewFile();
+            FileOutputStream outputStream = new FileOutputStream(newfile);
+            Bitmap image = qrgEncoder.encodeAsBitmap();
+            image.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+            qrUri = FileProvider.getUriForFile(
+                    this,
+                    this.getApplicationContext()
+                            .getPackageName() + ".provider", newfile);
+
+        } catch (Exception e) {
             getProgressDialog().dismiss();
             Toast toast = Toast.makeText(this, "Unable to generateQR Code", Toast.LENGTH_SHORT);
         }
@@ -426,4 +512,44 @@ public class MainActivity extends AppCompatActivity
     public void setSavedList(RecyclerView savedList) {
         this.savedList = savedList;
     }
+
+    public void shareQr(View view){
+        try {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("image/png");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, qrUri);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(shareIntent);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public View getInstructionView() {
+        return instructionView;
+    }
+
+    public void setInstructionView(View instructionView) {
+        this.instructionView = instructionView;
+    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        getMenuInflater().inflate(R.menu.main, menu);
+//        return true;
+//    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//
+//        //noinspection SimplifiableIfStatement
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
 }

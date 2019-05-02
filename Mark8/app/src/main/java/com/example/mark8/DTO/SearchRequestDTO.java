@@ -4,13 +4,13 @@ import java.util.List;
 
 public class SearchRequestDTO {
 
-    private int[][][]payload;
+    private byte[][][]payload;
 
-    public int[][][] getPayload() {
+    public byte[][][] getPayload() {
         return payload;
     }
 
-    public void setPayload(int[][][] payload) {
+    public void setPayload(byte[][][] payload) {
         this.payload = payload;
     }
 }

@@ -50,7 +50,7 @@ class fetchsaved(Resource):
             })
         return result, 200
 
-api.add_resource(User,"/user/api/fetchpoduct")
+api.add_resource(User,"/imageSearch")
 api.add_resource(list,"/user/api/list")
 api.add_resource(fetchsaved, "/user/api/saved")
 

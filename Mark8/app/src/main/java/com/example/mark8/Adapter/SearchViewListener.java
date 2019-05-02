@@ -36,10 +36,6 @@ public class SearchViewListener implements View.OnTouchListener {
             case MotionEvent.ACTION_DOWN:
                 action_down_x = (int) event.getX();
                 isSwipe=false;  //until now
-                view.animate()
-                        .translationY(-100)
-                        .setDuration(200)
-                        .setListener(null);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(!isSwipe)
@@ -58,6 +54,8 @@ public class SearchViewListener implements View.OnTouchListener {
                                     .setDuration(200);
                             mainContext.addtoSavedList(product);
                             context.getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+                            context.getSavedView().findViewById(R.id.shareqr).setVisibility(View.INVISIBLE);
+                            context.getSavedView().findViewById(R.id.genqr).setVisibility(View.VISIBLE);
                             Toast toast = Toast.makeText(context, "Item "+product.getName()+" saved to list", Toast.LENGTH_SHORT);
                             toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
                             toast.show();
