@@ -22,7 +22,7 @@ import retrofit2.http.POST;
 
 public class FetchProducts {
     private static Retrofit retrofit;
-    private static String url = "http://192.168.1.12:5000/user/api/";
+    private static String url = "http://192.168.43.144:5000/user/api/";
     private MainActivity mainActivity;
 
     public FetchProducts(MainActivity mainActivity){
@@ -55,6 +55,7 @@ public class FetchProducts {
 
             @Override
             public void onFailure(Call<SearchResultDTO> call, Throwable t) {
+                mainActivity.getProgressDialog().dismiss();
                 Toast.makeText(mainActivity, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
             }
         });
@@ -72,6 +73,7 @@ public class FetchProducts {
 
             @Override
             public void onFailure(Call<SearchResultDTO> call, Throwable t) {
+                mainActivity.getProgressDialog().dismiss();
                 Toast.makeText(mainActivity, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
             }
         });
@@ -89,6 +91,7 @@ public class FetchProducts {
 
             @Override
             public void onFailure(Call<SearchResultDTO> call, Throwable t) {
+                mainActivity.getProgressDialog().dismiss();
                 Toast.makeText(mainActivity, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
             }
         });

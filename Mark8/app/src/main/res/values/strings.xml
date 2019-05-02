@@ -16,4 +16,5 @@
     <string name="saved_list">Saved List</string>
     <string name="main">Search</string>
     <string name="cart">Cart</string>
+    <string name="defaultmsg">Click on camera icon to start searching.</string>
 </resources>

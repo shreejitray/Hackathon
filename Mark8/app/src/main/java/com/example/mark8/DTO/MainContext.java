@@ -51,4 +51,16 @@ public class MainContext {
     public List<Product> getCartList() {
         return cartList;
     }
+
+    public void removeFromSavedList(Product product){
+        if(savedList.contains(product)){
+            savedList.remove(product);
+        }
+    }
+
+    public void removeFromCartList(Product product){
+        if(cartList.contains(product)){
+            cartList.remove(product);
+        }
+    }
 }

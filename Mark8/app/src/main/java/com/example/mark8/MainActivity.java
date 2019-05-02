@@ -1,6 +1,7 @@
 package com.example.mark8;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -8,9 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.constraint.Constraints;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.DividerItemDecoration;
@@ -26,18 +24,18 @@ import android.support.v4.widget.DrawerLayout;
 
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mark8.Adapter.CardCustomAdapter;
-import com.example.mark8.Adapter.CardSwipeListener;
+import com.example.mark8.Adapter.CartViewListener;
+import com.example.mark8.Adapter.SavedViewListener;
+import com.example.mark8.Adapter.SearchViewListener;
 import com.example.mark8.Adapter.CartCardAdapter;
 import com.example.mark8.Adapter.FetchProducts;
 import com.example.mark8.Adapter.SavedListAdapter;
 import com.example.mark8.DTO.MainContext;
-import com.example.mark8.DTO.Product;
 import com.example.mark8.DTO.SearchResultDTO;
 import com.google.zxing.WriterException;
 import com.google.zxing.integration.android.IntentIntegrator;
@@ -49,7 +47,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import androidmads.library.qrgenearator.QRGContents;
 import androidmads.library.qrgenearator.QRGEncoder;
@@ -59,17 +56,17 @@ public class MainActivity extends AppCompatActivity
 
     private MainContext mainContext;
     RecyclerView searchCardList;
-    RecyclerView cartCardList;
-    RecyclerView savedList;
+    private RecyclerView cartCardList;
+    private RecyclerView savedList;
     View searchView;
-    View cartView;
-    View savedView;
+    private View cartView;
+    private View savedView;
     static final int CAPTURE_IMAGE=1;
     static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
     private Uri picUri;
     private FetchProducts fetchProducts;
     private IntentIntegrator qrScan;
-
+    private ProgressDialog progressDialog;
 
 
     @Override
@@ -100,7 +97,6 @@ public class MainActivity extends AppCompatActivity
                                            String[] permissions, int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
-                // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     setContentView(R.layout.activity_main);
@@ -112,9 +108,6 @@ public class MainActivity extends AppCompatActivity
                     toast.show();
                 }
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request.
         }
     }
 
@@ -122,18 +115,20 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //qr scan
         qrScan = new IntentIntegrator(this);
 
-        savedView = findViewById(R.id.saved_view);
+        //initiating view
+        setSavedView(findViewById(R.id.saved_view));
         searchView = findViewById(R.id.search_view);
-        cartView = findViewById(R.id.cart_view);
-
+        setCartView(findViewById(R.id.cart_view));
         fetchProducts = new FetchProducts(this);
-        // main context
         mainContext = new MainContext();
+        setProgressDialog(new ProgressDialog(this));
+
+        // Initiating Search recycler view
         CardCustomAdapter cardCustomAdapter = new CardCustomAdapter(mainContext);
-        CardSwipeListener cardSwipeListener = new CardSwipeListener();
-        cardSwipeListener.setMainContext(mainContext);
+        SearchViewListener searchViewListener = new SearchViewListener(this,mainContext);
 
         searchCardList = findViewById(R.id.productlist);
 
@@ -143,11 +138,12 @@ public class MainActivity extends AppCompatActivity
         searchCardList.addItemDecoration(new DividerItemDecoration(this,LinearLayoutManager.VERTICAL));
 
         searchCardList.setAdapter(cardCustomAdapter);
-        searchCardList.setOnTouchListener(cardSwipeListener);
+        searchCardList.setOnTouchListener(searchViewListener);
         searchView.setVisibility(View.VISIBLE);
 
-
+        // Initiating Cart recycler view
         CartCardAdapter cartCardAdapter = new CartCardAdapter(mainContext);
+        CartViewListener cartViewListener = new CartViewListener(this,mainContext);
         cartCardList = findViewById(R.id.cartList);
 
         RecyclerView.LayoutManager layoutManager2 = new LinearLayoutManager(this);
@@ -156,11 +152,14 @@ public class MainActivity extends AppCompatActivity
         cartCardList.addItemDecoration(new DividerItemDecoration(this,LinearLayoutManager.VERTICAL));
 
         cartCardList.setAdapter(cartCardAdapter);
-        cartView.setVisibility(View.INVISIBLE);
+        cartCardList.setOnTouchListener(cartViewListener);
+        getCartView().setVisibility(View.INVISIBLE);
 
+        // Initiating Saved list view
         SavedListAdapter savedListAdapter = new SavedListAdapter(mainContext);
+        SavedViewListener savedViewListener = new SavedViewListener(this, mainContext);
         savedList = findViewById(R.id.saveList);
-        savedView.setVisibility(View.INVISIBLE);
+        getSavedView().setVisibility(View.INVISIBLE);
 
         RecyclerView.LayoutManager layoutManager3 = new LinearLayoutManager(this);
         savedList.setLayoutManager(layoutManager3);
@@ -168,9 +167,8 @@ public class MainActivity extends AppCompatActivity
         savedList.addItemDecoration(new DividerItemDecoration(this,LinearLayoutManager.VERTICAL));
 
         savedList.setAdapter(savedListAdapter);
-
-
-
+        savedList.setOnTouchListener(savedViewListener);
+        getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
 
         // navigation pane
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -180,22 +178,6 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
-    }
-
-    private void populateData() {
-
-        List<Product> products = new ArrayList<>();
-
-        for(int i=0;i<10;i++){
-            Product product = new Product();
-            product.setId(i);
-            product.setImageUrl("https://img.icons8.com/office/24/000000/shopping-cart.png");
-            product.setPrice("25");
-            product.setName("phone");
-            product.setCount(0);
-            products.add(product);
-        }
-        mainContext.setSearchList(products);
     }
 
     @Override
@@ -217,23 +199,27 @@ public class MainActivity extends AppCompatActivity
         switch(id){
             case R.id.open_cart:{
                 cartCardList.getAdapter().notifyDataSetChanged();
-                cartView.setVisibility(View.VISIBLE);
+                getCartView().setVisibility(View.VISIBLE);
                 searchView.setVisibility(View.INVISIBLE);
-                savedView.setVisibility(View.INVISIBLE);
+                getSavedView().setVisibility(View.INVISIBLE);
+                cartCardList.scheduleLayoutAnimation();
                 break;
             }
             case R.id.open_list:{
 
                 savedList.getAdapter().notifyDataSetChanged();
-                cartView.setVisibility(View.INVISIBLE);
+                getCartView().setVisibility(View.INVISIBLE);
                 searchView.setVisibility(View.INVISIBLE);
-                savedView.setVisibility(View.VISIBLE);
+                getSavedView().setVisibility(View.VISIBLE);
+                savedList.scheduleLayoutAnimation();
                 break;
+
             }
             case R.id.open_main:{
-                cartView.setVisibility(View.INVISIBLE);
+                getCartView().setVisibility(View.INVISIBLE);
                 searchView.setVisibility(View.VISIBLE);
-                savedView.setVisibility(View.INVISIBLE);
+                getSavedView().setVisibility(View.INVISIBLE);
+                searchCardList.scheduleLayoutAnimation();
                 break;
             }
         }
@@ -246,9 +232,6 @@ public class MainActivity extends AppCompatActivity
     public void LaunchCamera(View view){
         try {
             Intent capture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-
-            // capture.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
             if(capture.resolveActivity(getPackageManager())!= null) {
                 startActivityForResult(capture, CAPTURE_IMAGE);
             }else{
@@ -272,8 +255,6 @@ public class MainActivity extends AppCompatActivity
                 File newdir = new File(dir);
                 newdir.mkdirs();
                 String file = dir+ DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString()+".png";
-
-
                 File newfile = new File(file);
                 try {
                     newfile.createNewFile();
@@ -293,12 +274,22 @@ public class MainActivity extends AppCompatActivity
             CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if(resultCode == RESULT_OK){
                 try {
+                    getCartView().setVisibility(View.INVISIBLE);
+                    getSavedView().setVisibility(View.INVISIBLE);
+                    searchView.setVisibility(View.VISIBLE);
+                    mainContext.setSearchList(new ArrayList());
+                    searchCardList.getAdapter().notifyDataSetChanged();
+
+                    getProgressDialog().setMessage("Processing image, fetching products");
+                    getProgressDialog().show();
+
                     Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), result.getUri());
                     ImageView imageView = findViewById(R.id.clickedimage);
                     imageView.setImageURI(result.getUri());
                     fetchProducts.fetchProducts(bitmap);
                 } catch (IOException e) {
-                    System.out.println("File not found");
+                    getProgressDialog().dismiss();
+                    Toast.makeText(this,"Unable to process image, please try again",Toast.LENGTH_LONG).show();
                 }
             }
         }else{
@@ -307,17 +298,31 @@ public class MainActivity extends AppCompatActivity
                 Toast.makeText(this,"QR Result Not Found",Toast.LENGTH_LONG).show();
             }else{
                 String content = result.getContents();
-                fetchProducts.fetchSavedList(content);
+                if(content!=null) {
+                    try {
+                        getProgressDialog().setMessage("Processing QR Code, please wait");
+                        getProgressDialog().show();
+                        fetchProducts.fetchSavedList(content);
+                    }catch(Exception e){
+                        getProgressDialog().dismiss();
+                        Toast.makeText(this,"Error processing QR code.",Toast.LENGTH_LONG).show();
+                    }
+                }else{
+                    Toast.makeText(this,"No Id found, please scan correct code",Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
 
     public void savedListSetup(SearchResultDTO resultDTO){
+        getProgressDialog().dismiss();
         mainContext.setSavedList(resultDTO.getProducts());
         savedList.getAdapter().notifyDataSetChanged();
-        savedView.setVisibility(View.VISIBLE);
+        getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+        getSavedView().setVisibility(View.VISIBLE);
         searchView.setVisibility(View.INVISIBLE);
-        cartView.setVisibility(View.INVISIBLE);
+        getCartView().setVisibility(View.INVISIBLE);
+        savedList.scheduleLayoutAnimation();
     }
 
     public void performCrop(){
@@ -335,13 +340,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void setUpContext(SearchResultDTO resultDTO){
+        getProgressDialog().dismiss();
         mainContext.setSearchList(resultDTO.getProducts());
         searchCardList.getAdapter().notifyDataSetChanged();
         TextView textView = findViewById(R.id.itemname);
         textView.setText(resultDTO.getItemName());
         searchView.setVisibility(View.VISIBLE);
-        cartView.setVisibility(View.INVISIBLE);
-        savedView.setVisibility(View.INVISIBLE);
+        getCartView().setVisibility(View.INVISIBLE);
+        getSavedView().setVisibility(View.INVISIBLE);
+        searchCardList.scheduleLayoutAnimation();
 
     }
 
@@ -350,19 +357,67 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void fetchId(View view){
-        fetchProducts.generateQRCode(mainContext.getSavedList());
+        getProgressDialog().setMessage("Generating QR code, please wait");
+        getProgressDialog().show();
+        try {
+            fetchProducts.generateQRCode(mainContext.getSavedList());
+        }catch (Exception e){
+            Toast toast = Toast.makeText(this, "Unable to generateQR Code", Toast.LENGTH_SHORT);
+            getProgressDialog().dismiss();
+        }
     }
 
     public void generateQRCode(String id){
         QRGEncoder qrgEncoder = new QRGEncoder(id, null, QRGContents.Type.TEXT, 10);
-        ImageView imageView = savedView.findViewById(R.id.qrimage);
+        ImageView imageView = getSavedView().findViewById(R.id.qrimage);
         try {
             imageView.setImageBitmap(qrgEncoder.encodeAsBitmap());
             imageView.setVisibility(View.VISIBLE);
+            getProgressDialog().dismiss();
         } catch (WriterException e) {
+            getProgressDialog().dismiss();
             Toast toast = Toast.makeText(this, "Unable to generateQR Code", Toast.LENGTH_SHORT);
         }
 
     }
 
+    public ProgressDialog getProgressDialog() {
+        return progressDialog;
+    }
+
+    public void setProgressDialog(ProgressDialog progressDialog) {
+        this.progressDialog = progressDialog;
+    }
+
+    public View getSavedView() {
+        return savedView;
+    }
+
+    public void setSavedView(View savedView) {
+        this.savedView = savedView;
+    }
+
+    public View getCartView() {
+        return cartView;
+    }
+
+    public void setCartView(View cartView) {
+        this.cartView = cartView;
+    }
+
+    public RecyclerView getCartCardList() {
+        return cartCardList;
+    }
+
+    public void setCartCardList(RecyclerView cartCardList) {
+        this.cartCardList = cartCardList;
+    }
+
+    public RecyclerView getSavedList() {
+        return savedList;
+    }
+
+    public void setSavedList(RecyclerView savedList) {
+        this.savedList = savedList;
+    }
 }

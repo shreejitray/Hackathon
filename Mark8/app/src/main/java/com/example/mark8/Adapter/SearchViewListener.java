@@ -1,18 +1,29 @@
 package com.example.mark8.Adapter;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import com.example.mark8.DTO.MainContext;
 import com.example.mark8.DTO.Product;
+import com.example.mark8.MainActivity;
+import com.example.mark8.R;
 
-public class CardSwipeListener implements View.OnTouchListener {
+public class SearchViewListener implements View.OnTouchListener {
     int action_down_x;
     int action_up_x;
     boolean isSwipe = false;
     int difference;
     private MainContext mainContext;
+    private MainActivity context;
+
+    public SearchViewListener(MainActivity context, MainContext mainContext){
+        this.mainContext=mainContext;
+        this.context = context;
+    }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
@@ -33,13 +44,20 @@ public class CardSwipeListener implements View.OnTouchListener {
                         CardCustomAdapter.CustomHolder customHolder = (CardCustomAdapter.CustomHolder) list.findContainingViewHolder(view);
                         Product product = customHolder.product;
                         //swipe left or right
-                        if(difference>0){
+                        if(difference>50){
                             //add to save list
                             mainContext.addtoSavedList(product);
+                            context.getSavedView().findViewById(R.id.qrimage).setVisibility(View.GONE);
+                            Toast toast = Toast.makeText(context, "Item "+product.getName()+" saved to list", Toast.LENGTH_SHORT);
+                            toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
+                            toast.show();
                         }
-                        else{
+                        else if(difference < -50){
                             //add to cartt
                             mainContext.addToCart(product);
+                            Toast toast = Toast.makeText(context, "Item "+product.getName()+" added to cart", Toast.LENGTH_SHORT);
+                            toast.setGravity(Gravity.CENTER_VERTICAL,0,0);
+                            toast.show();
                         }
                         isSwipe=true;
                     }

@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".MainActivity"
-    tools:showIn="@layout/app_bar_main">
+    tools:showIn="@layout/app_bar_main"
+    android:contentDescription="@string/defaultmsg">
     <include layout="@layout/cart_content"/>
     <include layout="@layout/search_content"/>
     <include layout="@layout/saved_content"/>
